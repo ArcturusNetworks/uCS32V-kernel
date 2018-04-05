@@ -15,7 +15,6 @@ config REGMAP_AC97
 config REGMAP_I2C
 	tristate
 	depends on I2C
-	default y
 
 config REGMAP_SPI
 	tristate

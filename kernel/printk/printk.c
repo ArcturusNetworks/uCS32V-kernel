@@ -2333,7 +2333,7 @@ skip:
 		raw_spin_unlock_irqrestore(&logbuf_lock, flags);
 		call_console_drivers(level, text, len);
 #else
-		raw_spin_unlock_irqrestore(&logbuf_lock, flags);
+		raw_spin_unlock(&logbuf_lock);
 
 		stop_critical_timings();	/* don't trace print latency */
 		call_console_drivers(level, text, len);
@@ -2350,7 +2350,7 @@ skip:
 	if (unlikely(exclusive_console))
 		exclusive_console = NULL;
 
-	raw_spin_unlock_irqrestore(&logbuf_lock, flags);
+	raw_spin_unlock(&logbuf_lock);
 
 	up_console_sem();
 

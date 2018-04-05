@@ -1206,7 +1206,7 @@ static struct pcie_host_ops s32v234_pcie_host_ops = {
 	.send_signal_to_user = send_signal_to_user,
 };
 
-static int s32v234_add_pcie_port(struct pcie_port *pp,
+static int __init s32v234_add_pcie_port(struct pcie_port *pp,
 			struct platform_device *pdev)
 {
 	int ret;
@@ -1239,12 +1239,16 @@ static int s32v234_add_pcie_port(struct pcie_port *pp,
 
 static void s32v234_pcie_shutdown(struct platform_device *pdev)
 {
-        struct s32v234_pcie *s32v234_pcie = platform_get_drvdata(pdev);
+	struct s32v234_pcie *s32v234_pcie = platform_get_drvdata(pdev);
 
 	if (!s32v234_pcie->is_endpoint) {
 		/* bring down link, so bootloader gets clean state
 		 * in case of reboot */
-                devm_free_irq(&pdev->dev, s32v234_pcie->pp.link_req_rst_not_irq, &s32v234_pcie->pp);
+
+		devm_free_irq(&pdev->dev,
+			s32v234_pcie->pp.link_req_rst_not_irq,
+			&s32v234_pcie->pp);
+
 		s32v234_pcie_assert_core_reset(&s32v234_pcie->pp);
 		mdelay(PCIE_CX_CPL_BASE_TIMER_VALUE);
 	}
@@ -1297,6 +1301,12 @@ done:
 static struct pcie_host_ops s32v234_pcie_host_ops_ep = {
 	.send_signal_to_user = send_signal_to_user,
 };
+
+struct pcie_port *s32v_get_pcie_port(void)
+{
+	return (struct pcie_port *)pcie_port_ep;
+}
+EXPORT_SYMBOL(s32v_get_pcie_port);
 
 static int s32v234_pcie_probe(struct platform_device *pdev)
 {
@@ -1368,6 +1378,8 @@ static int s32v234_pcie_probe(struct platform_device *pdev)
 
 		pp->ops = &s32v234_pcie_host_ops_ep;
 		pcie_port_ep = pp;
+
+		pp->call_back = NULL;
 
 		#ifdef CONFIG_PCI_DW_DMA
 		pp->dma_irq = platform_get_irq_byname(pdev, "dma");

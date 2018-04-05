@@ -30,6 +30,7 @@
 #include <linux/slab.h>
 #include <linux/tty_flip.h>
 #include <linux/jiffies.h>
+#include <linux/kgdb.h>
 
 /* All registers are 32-bit width */
 
@@ -63,75 +64,75 @@
  *	CONSTANT DEFINITIONS
  */
 
-#define LINFLEXD_LINCR1_INIT		(1<<0)
-#define LINFLEXD_LINCR1_MME		(1<<4)
-#define LINFLEXD_LINCR1_BF		(1<<7)
+#define LINFLEXD_LINCR1_INIT		BIT(0)
+#define LINFLEXD_LINCR1_MME		BIT(4)
+#define LINFLEXD_LINCR1_BF		BIT(7)
 
-#define LINFLEXD_LINSR_LINS_INITMODE	(1<<12)
+#define LINFLEXD_LINSR_LINS_INITMODE	BIT(12)
 #define LINFLEXD_LINSR_LINS_MASK	(0xF<<12)
 
-#define LINFLEXD_LINIER_SZIE		(1<<15)
-#define LINFLEXD_LINIER_OCIE		(1<<14)
-#define LINFLEXD_LINIER_BEIE		(1<<13)
-#define LINFLEXD_LINIER_CEIE		(1<<12)
-#define LINFLEXD_LINIER_HEIE		(1<<11)
-#define LINFLEXD_LINIER_FEIE		(1<<8)
-#define LINFLEXD_LINIER_BOIE		(1<<7)
-#define LINFLEXD_LINIER_LSIE		(1<<6)
-#define LINFLEXD_LINIER_WUIE		(1<<5)
-#define LINFLEXD_LINIER_DBFIE		(1<<4)
-#define LINFLEXD_LINIER_DBEIETOIE	(1<<3)
-#define LINFLEXD_LINIER_DRIE		(1<<2)
-#define LINFLEXD_LINIER_DTIE		(1<<1)
-#define LINFLEXD_LINIER_HRIE		(1<<0)
+#define LINFLEXD_LINIER_SZIE		BIT(15)
+#define LINFLEXD_LINIER_OCIE		BIT(14)
+#define LINFLEXD_LINIER_BEIE		BIT(13)
+#define LINFLEXD_LINIER_CEIE		BIT(12)
+#define LINFLEXD_LINIER_HEIE		BIT(11)
+#define LINFLEXD_LINIER_FEIE		BIT(8)
+#define LINFLEXD_LINIER_BOIE		BIT(7)
+#define LINFLEXD_LINIER_LSIE		BIT(6)
+#define LINFLEXD_LINIER_WUIE		BIT(5)
+#define LINFLEXD_LINIER_DBFIE		BIT(4)
+#define LINFLEXD_LINIER_DBEIETOIE	BIT(3)
+#define LINFLEXD_LINIER_DRIE		BIT(2)
+#define LINFLEXD_LINIER_DTIE		BIT(1)
+#define LINFLEXD_LINIER_HRIE		BIT(0)
 
 #define LINFLEXD_UARTCR_OSR_MASK	(0xF<<24)
 #define LINFLEXD_UARTCR_OSR(uartcr)	(((uartcr) \
 					& LINFLEXD_UARTCR_OSR_MASK) >> 24)
 
-#define LINFLEXD_UARTCR_ROSE		(1<<23)
+#define LINFLEXD_UARTCR_ROSE		BIT(23)
 
 #define LINFLEXD_UARTCR_SBUR_MASK	(0x3<<17)
 #define LINFLEXD_UARTCR_SBUR_1SBITS	(0x0<<17)
 #define LINFLEXD_UARTCR_SBUR_2SBITS	(0x1<<17)
 #define LINFLEXD_UARTCR_SBUR_3SBITS	(0x2<<17)
 
-#define LINFLEXD_UARTCR_RFBM		(1<<9)
-#define LINFLEXD_UARTCR_TFBM		(1<<8)
-#define LINFLEXD_UARTCR_WL1		(1<<7)
-#define LINFLEXD_UARTCR_PC1		(1<<6)
+#define LINFLEXD_UARTCR_RFBM		BIT(9)
+#define LINFLEXD_UARTCR_TFBM		BIT(8)
+#define LINFLEXD_UARTCR_WL1		BIT(7)
+#define LINFLEXD_UARTCR_PC1		BIT(6)
 
-#define LINFLEXD_UARTCR_RXEN		(1<<5)
-#define LINFLEXD_UARTCR_TXEN		(1<<4)
-#define LINFLEXD_UARTCR_PC0		(1<<3)
+#define LINFLEXD_UARTCR_RXEN		BIT(5)
+#define LINFLEXD_UARTCR_TXEN		BIT(4)
+#define LINFLEXD_UARTCR_PC0		BIT(3)
 
-#define LINFLEXD_UARTCR_PCE		(1<<2)
-#define LINFLEXD_UARTCR_WL0		(1<<1)
-#define LINFLEXD_UARTCR_UART		(1<<0)
+#define LINFLEXD_UARTCR_PCE		BIT(2)
+#define LINFLEXD_UARTCR_WL0		BIT(1)
+#define LINFLEXD_UARTCR_UART		BIT(0)
 
-#define LINFLEXD_UARTSR_SZF		(1<<15)
-#define LINFLEXD_UARTSR_OCF		(1<<14)
-#define LINFLEXD_UARTSR_PE3		(1<<13)
-#define LINFLEXD_UARTSR_PE2		(1<<12)
-#define LINFLEXD_UARTSR_PE1		(1<<11)
-#define LINFLEXD_UARTSR_PE0		(1<<10)
-#define LINFLEXD_UARTSR_RMB		(1<<9)
-#define LINFLEXD_UARTSR_FEF		(1<<8)
-#define LINFLEXD_UARTSR_BOF		(1<<7)
-#define LINFLEXD_UARTSR_RPS		(1<<6)
-#define LINFLEXD_UARTSR_WUF		(1<<5)
-#define LINFLEXD_UARTSR_4		(1<<4)
+#define LINFLEXD_UARTSR_SZF		BIT(15)
+#define LINFLEXD_UARTSR_OCF		BIT(14)
+#define LINFLEXD_UARTSR_PE3		BIT(13)
+#define LINFLEXD_UARTSR_PE2		BIT(12)
+#define LINFLEXD_UARTSR_PE1		BIT(11)
+#define LINFLEXD_UARTSR_PE0		BIT(10)
+#define LINFLEXD_UARTSR_RMB		BIT(9)
+#define LINFLEXD_UARTSR_FEF		BIT(8)
+#define LINFLEXD_UARTSR_BOF		BIT(7)
+#define LINFLEXD_UARTSR_RPS		BIT(6)
+#define LINFLEXD_UARTSR_WUF		BIT(5)
+#define LINFLEXD_UARTSR_4		BIT(4)
 
-#define LINFLEXD_UARTSR_TO		(1<<3)
+#define LINFLEXD_UARTSR_TO		BIT(3)
 
-#define LINFLEXD_UARTSR_DRFRFE		(1<<2)
-#define LINFLEXD_UARTSR_DTFTFF		(1<<1)
-#define LINFLEXD_UARTSR_NF		(1<<0)
+#define LINFLEXD_UARTSR_DRFRFE		BIT(2)
+#define LINFLEXD_UARTSR_DTFTFF		BIT(1)
+#define LINFLEXD_UARTSR_NF		BIT(0)
 #define LINFLEXD_UARTSR_PE		(LINFLEXD_UARTSR_PE0|LINFLEXD_UARTSR_PE1|LINFLEXD_UARTSR_PE2|LINFLEXD_UARTSR_PE3)
 
-#define LINFLEXD_GCR_STOP_MASK		(1<<1)
-#define LINFLEXD_GCR_STOP_1SBITS	(0<<1)
-#define LINFLEXD_GCR_STOP_2SBITS	(1<<1)
+#define LINFLEXD_GCR_STOP_MASK		BIT(1)
+#define LINFLEXD_GCR_STOP_1SBITS	BIT(1)
+#define LINFLEXD_GCR_STOP_2SBITS	BIT(1)
 
 #define DMA_MAXBURST			(16)
 #define DMA_MAXBURST_MASK		(DMA_MAXBURST - 1)
@@ -144,9 +145,19 @@
 
 #define DRIVER_NAME	"fsl-linflexuart"
 #define DEV_NAME	"ttyLF"
-#define UART_NR		2
+#define UART_NR		4
 
 #define prd_info(a)	;//pr_info(a);
+
+#ifdef CONFIG_CONSOLE_POLL
+struct linflex_poll_ctx {
+	uint32_t ier;
+	uint32_t cr;
+	uint32_t dmatxe;
+	uint32_t dmarxe;
+	bool in_use;
+};
+#endif
 
 struct linflex_port {
 	struct uart_port	port;
@@ -171,11 +182,14 @@ struct linflex_port {
 	int			dma_rx_in_progress;
 	unsigned int		dma_rx_timeout;
 	struct timer_list	timer;
+#ifdef CONFIG_CONSOLE_POLL
+	struct linflex_poll_ctx poll_ctx;
+#endif
 };
 
-static struct of_device_id linflex_dt_ids[] = {
+static const struct of_device_id linflex_dt_ids[] = {
 	{
-		.compatible = "fsl,s32v234-linflexuart",
+		.compatible = "fsl,s32-linflexuart",
 	},
 	{ /* sentinel */ }
 };
@@ -184,6 +198,11 @@ MODULE_DEVICE_TABLE(of, linflex_dt_ids);
 /* Forward declare this for the dma callbacks. */
 static void linflex_dma_tx_complete(void *arg);
 static void linflex_dma_rx_complete(void *arg);
+
+#ifdef CONFIG_CONSOLE_POLL
+static void linflex_poll_release(struct linflex_port *sport);
+static void linflex_console_putchar(struct uart_port *port, int ch);
+#endif
 
 static void linflex_copy_rx_to_tty(struct linflex_port *sport,
 		struct tty_port *tty, int count)
@@ -402,9 +421,16 @@ static void linflex_dma_rx_complete(void *arg)
 	struct tty_port *port = &sport->port.state->port;
 	unsigned long flags;
 
-	mod_timer(&sport->timer, jiffies + sport->dma_rx_timeout);
-
 	spin_lock_irqsave(&sport->port.lock, flags);
+
+#ifdef CONFIG_CONSOLE_POLL
+	if (!kgdb_connected && sport->poll_ctx.in_use) {
+		sport->poll_ctx.in_use = false;
+		linflex_poll_release(sport);
+	}
+#endif
+
+	mod_timer(&sport->timer, jiffies + sport->dma_rx_timeout);
 
 	sport->dma_rx_in_progress = 0;
 	linflex_copy_rx_to_tty(sport, port, FSL_UART_RX_DMA_BUFFER_SIZE);
@@ -422,13 +448,20 @@ static void linflex_timer_func(unsigned long data)
 	unsigned long flags;
 	int count;
 
+	spin_lock_irqsave(&sport->port.lock, flags);
+
+#ifdef CONFIG_CONSOLE_POLL
+	if (!kgdb_connected && sport->poll_ctx.in_use) {
+		sport->poll_ctx.in_use = false;
+		linflex_poll_release(sport);
+	}
+#endif
+
 	del_timer(&sport->timer);
 	dmaengine_pause(sport->dma_rx_chan);
 	dmaengine_tx_status(sport->dma_rx_chan, sport->dma_rx_cookie, &state);
 	dmaengine_terminate_all(sport->dma_rx_chan);
 	count = FSL_UART_RX_DMA_BUFFER_SIZE - state.residue;
-
-	spin_lock_irqsave(&sport->port.lock, flags);
 
 	sport->dma_rx_in_progress = 0;
 	linflex_copy_rx_to_tty(sport, port, count);
@@ -600,7 +633,7 @@ static void linflex_setup_watermark(struct linflex_port *sport)
 
 	/* Enter initialization mode by setting INIT bit */
 
-	/* set the Linflex in master mode amd activate by-pass filter */
+	/* set the Linflex in master mode and activate by-pass filter */
 	cr1 = LINFLEXD_LINCR1_BF | LINFLEXD_LINCR1_MME
 	      | LINFLEXD_LINCR1_INIT;
 	writel(cr1, sport->port.membase + LINCR1);
@@ -1070,7 +1103,124 @@ static int linflex_verify_port(struct uart_port *port, struct serial_struct *ser
 	return ret;
 }
 
-static struct uart_ops linflex_pops = {
+#ifdef CONFIG_CONSOLE_POLL
+static int linflex_poll_init(struct uart_port *port)
+{
+	struct linflex_port *sport = container_of(port,
+					struct linflex_port, port);
+	uint32_t ier, cr, dmatxe, dmarxe;
+
+	/* Save control and DMA settings and disable interrupts */
+	ier = readl(sport->port.membase + LINIER);
+
+	sport->poll_ctx.ier = ier;
+	if (!sport->dma_tx_use) {
+		ier &= ~(LINFLEXD_LINIER_DTIE);
+		writel(ier, sport->port.membase + LINIER);
+	} else {
+		dmaengine_terminate_all(sport->dma_tx_chan);
+
+		dmatxe = readl(sport->port.membase + DMATXE);
+		sport->poll_ctx.dmatxe = dmatxe;
+		writel(dmatxe & 0xFFFF0000, sport->port.membase + DMATXE);
+	}
+
+	if (!sport->dma_rx_use) {
+		ier &= ~(LINFLEXD_LINIER_DRIE);
+		writel(ier, sport->port.membase + LINIER);
+	} else {
+		dmaengine_terminate_all(sport->dma_rx_chan);
+
+		dmarxe = readl(sport->port.membase + DMARXE);
+		sport->poll_ctx.dmarxe = dmarxe;
+		writel(dmarxe & 0xFFFF0000, sport->port.membase + DMARXE);
+	}
+
+	cr = readl(sport->port.membase + UARTCR);
+	sport->poll_ctx.cr = cr;
+
+	cr |= (LINFLEXD_UARTCR_TXEN) | (LINFLEXD_UARTCR_RXEN);
+
+	writel(cr, sport->port.membase + UARTCR);
+
+	return 0;
+}
+
+static void linflex_poll_release(struct linflex_port *sport)
+{
+	/* Restore settings from poll context */
+	if (!sport->dma_tx_use || !!sport->dma_rx_use)
+		writel(sport->poll_ctx.ier, sport->port.membase + LINIER);
+
+	if (sport->dma_tx_use)
+		writel(sport->poll_ctx.dmatxe, sport->port.membase + DMATXE);
+
+	if (sport->dma_rx_use)
+		writel(sport->poll_ctx.dmarxe, sport->port.membase + DMARXE);
+
+	writel(sport->poll_ctx.cr, sport->port.membase + UARTCR);
+}
+
+static void linflex_poll_putchar(struct uart_port *port, unsigned char ch)
+{
+	int ich = ch;
+	unsigned long flags;
+	struct linflex_port *sport = container_of(port,
+					struct linflex_port, port);
+
+	spin_lock_irqsave(&sport->port.lock, flags);
+
+	if (!sport->poll_ctx.in_use) {
+		sport->poll_ctx.in_use = true;
+		linflex_poll_init(port);
+	}
+
+	linflex_console_putchar(port, ich);
+	spin_unlock_irqrestore(&sport->port.lock, flags);
+}
+
+static int linflex_poll_getchar(struct uart_port *port)
+{
+	int ret = NO_POLL_CHAR;
+	unsigned long flags;
+	struct linflex_port *sport = container_of(port,
+					struct linflex_port, port);
+
+	spin_lock_irqsave(&sport->port.lock, flags);
+
+	if (!sport->poll_ctx.in_use) {
+		sport->poll_ctx.in_use = true;
+		linflex_poll_init(port);
+	}
+
+	if (!sport->dma_rx_use) {
+		/* Buffer mode: wait until the bytes programmed
+		   in RDFL are received */
+		while ((readl(port->membase + UARTSR) &
+					LINFLEXD_UARTSR_DRFRFE)
+				!= LINFLEXD_UARTSR_DRFRFE)
+			;
+	} else {
+		/* FIFO mode: Busy waiting while FIFO is empty */
+		while ((readl(port->membase + UARTSR) &
+					LINFLEXD_UARTSR_DRFRFE))
+			;
+	}
+
+	spin_unlock_irqrestore(&sport->port.lock, flags);
+
+	writel((readl(port->membase + UARTSR) |
+				LINFLEXD_UARTSR_DRFRFE),
+				port->membase + UARTSR);
+
+	ret = readb(port->membase + BDRM);
+
+	return ret;
+}
+#endif
+
+
+static const struct uart_ops linflex_pops = {
 	.tx_empty	= linflex_tx_empty,
 	.set_mctrl	= linflex_set_mctrl,
 	.get_mctrl	= linflex_get_mctrl,
@@ -1087,6 +1237,11 @@ static struct uart_ops linflex_pops = {
 	.config_port	= linflex_config_port,
 	.verify_port	= linflex_verify_port,
 	.flush_buffer	= linflex_flush_buffer,
+#ifdef CONFIG_CONSOLE_POLL
+	.poll_get_char	= linflex_poll_getchar,
+	.poll_put_char	= linflex_poll_putchar,
+#endif
+
 };
 
 static struct linflex_port *linflex_ports[UART_NR];
@@ -1122,7 +1277,8 @@ linflex_console_write(struct console *co, const char *s, unsigned int count)
 	unsigned long cr, ier, old_ier;
 
 	/* First save CR2 and then disable interrupts. */
-	ier = old_ier = readl(sport->port.membase + LINIER);
+	ier = readl(sport->port.membase + LINIER);
+	old_ier = ier;
 	if (!sport->dma_tx_use) {
 		ier &= ~(LINFLEXD_LINIER_DTIE);
 		writel(ier, sport->port.membase + LINIER);
@@ -1148,7 +1304,7 @@ linflex_console_get_options(struct linflex_port *sport, int *baud,
 {
 #ifndef CONFIG_S32V234_PALLADIUM
 	/*unsigned char cr, bdh, bdl, brfa;*/
-	unsigned long cr, fbr, ibr;
+	unsigned long cr, ibr;
 	unsigned int uartclk, baud_raw;
 
 	prd_info("8\n");
@@ -1175,8 +1331,6 @@ linflex_console_get_options(struct linflex_port *sport, int *baud,
 			*bits = 8;
 	}
 
-	fbr = readl(sport->port.membase + LINFBRR);
-
 	ibr = readl(sport->port.membase + LINIBRR);
 
 	uartclk = clk_get_rate(sport->clk);
@@ -1184,8 +1338,8 @@ linflex_console_get_options(struct linflex_port *sport, int *baud,
 	baud_raw = uartclk / (linflex_ldiv_multiplier(sport) * ibr);
 
 	if (*baud != baud_raw)
-		printk(KERN_INFO "Serial: Console linflex rounded baud rate"
-				"from %d to %d\n", baud_raw, *baud);
+		pr_info("Serial: Console linflex rounded baud rate from %d to %d\n",
+			baud_raw, *baud);
 	#endif
 }
 
@@ -1205,7 +1359,7 @@ static int __init linflex_console_setup(struct console *co, char *options)
 		co->index = 0;
 
 	sport = linflex_ports[co->index];
-	if (sport == NULL)
+	if (!sport)
 		return -ENODEV;
 
 	if (options)
@@ -1260,6 +1414,12 @@ static int linflex_probe(struct platform_device *pdev)
 		dev_err(&pdev->dev, "failed to get alias id, errno %d\n", ret);
 		return ret;
 	}
+	if (ret >= UART_NR) {
+		dev_err(&pdev->dev, "driver limited to %d serial ports\n",
+				UART_NR);
+		return -ENOMEM;
+	}
+
 	sport->port.line = ret;
 
 	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);

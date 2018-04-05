@@ -1,5 +1,6 @@
 /*
  * Copyright 2013 Freescale Semiconductor, Inc.
+ * Copyright 2017 NXP
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -34,7 +35,7 @@
 
 		cpu@0 {
 			device_type = "cpu";
-			compatible = "arm,arm-v8";
+			compatible = "arm,armv8";
 			reg = <0x0 0x0>;
 			enable-method = "spin-table";
 			cpu-release-addr = <0x0 0x8000fff8>;
@@ -105,7 +106,7 @@ soc {
 		ranges;
 
 		aips0: aips-bus@40000000 {
-			compatible = "fsl,aips-bus", "simple-bus";
+			compatible = "simple-bus";
 			#address-cells = <2>;
 			#size-cells = <2>;
 			interrupt-parent = <&gic>;
@@ -113,7 +114,7 @@ soc {
 			ranges;
 
 			imx_serial0:serial@40053000 {
-				compatible = "fsl,s32v234-linflexuart";
+				compatible = "fsl,s32-linflexuart";
 				reg = <0x0 0x40053000 0x0 0x1000>;
 				interrupts = <0 59 4>;
 				clocks = <&v2m_oscclk2>, <&p9_smbclk>;
